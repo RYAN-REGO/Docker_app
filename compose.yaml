@@ -1,0 +1,54 @@
+version: "3.8"
+
+#docker will create a default network for all the services defined herewith
+services:
+
+  web:
+    depends_on:
+    #the front end depends on the server / api
+      - api
+    build: ./client
+    ports:
+    #first number is the port on the host machine, second number is the port on the container
+      - 5173:5173
+    environment:
+      - VITE_FIREBASE_API_KEY=api-key
+    
+    #DOCKER COMPOSE WATCH MODE
+    #anything mentioned under develoop will be watched for changes by docker compose
+    develop:
+      watch:
+        - path: ./client/package.json
+          action: rebuild
+        - path: ./client/package-lock.json
+          action: rebuild
+        - path: ./client
+          target: /app
+          action: sync
+  api:
+    depends_on:
+    #the server depends on the database
+      - db
+    build: ./server
+    ports:
+      - 5000:5000
+    environment:
+      - PORT=5000
+      - NODE_ENV=development
+      - MONGO_KEY=mongodb://db:27017/media
+    develop:
+      watch:
+        - path: ./server/package.json
+          action: rebuild
+        - path: ./server/package-lock.json
+          action: rebuild
+        - path: ./server
+          target: /app
+          action: sync
+  db:
+    image: mongo:latest
+    volumes:
+      - media:/data/db
+
+volumes:
+  media:
